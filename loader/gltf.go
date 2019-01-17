@@ -16,6 +16,7 @@ import (
 	"github.com/g3n/g3nd/app"
 	"github.com/g3n/g3nd/util"
 	"github.com/g3n/engine/animation"
+	"github.com/golang/glog"
 )
 
 func init() {
@@ -71,7 +72,8 @@ func (t *GltfLoader) Initialize(a *app.App) {
 	errLabel.SetFontSize(18)
 	a.Gui().Add(errLabel)
 
-	fpath := "gltf/DamagedHelmet/glTF/DamagedHelmet.gltf"
+	//fpath := "gltf/DamagedHelmet/glTF/DamagedHelmet.gltf"
+	fpath := "gltf/SimpleSkinning.gltf"
 	t.loadScene(a, filepath.Join(a.DirData(), fpath))
 	t.selFile.Label.SetText("File: " + filepath.Base(fpath))
 
@@ -116,9 +118,9 @@ func (t *GltfLoader) loadScene(a *app.App, fpath string) error {
 	}
 
 	spew.Config.Indent = "   "
-	spew.Dump(g.Nodes)
-	spew.Dump(g.Meshes)
-	spew.Dump(g.Accessors)
+	//spew.Dump(g.Nodes)
+	//spew.Dump(g.Meshes)
+	//spew.Dump(g.Accessors)
 
 	defaultSceneIdx := 0
 	if g.Scene != nil {
@@ -133,7 +135,11 @@ func (t *GltfLoader) loadScene(a *app.App, fpath string) error {
 
 	// Create animations
 	for i := range g.Animations {
-		anim, _ := g.NewAnimation(i)
+		anim, err := g.NewAnimation(i)
+		if err != nil{
+			glog.Error(err)
+			continue
+		}
 		anim.SetLoop(true)
 		t.anims = append(t.anims, anim)
 	}
