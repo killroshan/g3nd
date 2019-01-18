@@ -2,20 +2,19 @@ package loader
 
 import (
 	"fmt"
-	"path/filepath"
 	"github.com/davecgh/go-spew/spew"
 	"github.com/g3n/engine/core"
 	"github.com/g3n/engine/graphic"
+	"path/filepath"
 
-
+	"github.com/g3n/engine/animation"
 	"github.com/g3n/engine/gui"
 	"github.com/g3n/engine/light"
 	"github.com/g3n/engine/loader/gltf"
 	"github.com/g3n/engine/math32"
-	"github.com/g3n/g3nd/demos"
 	"github.com/g3n/g3nd/app"
+	"github.com/g3n/g3nd/demos"
 	"github.com/g3n/g3nd/util"
-	"github.com/g3n/engine/animation"
 	"github.com/golang/glog"
 )
 
@@ -136,13 +135,23 @@ func (t *GltfLoader) loadScene(a *app.App, fpath string) error {
 	// Create animations
 	for i := range g.Animations {
 		anim, err := g.NewAnimation(i)
-		if err != nil{
+		if err != nil {
 			glog.Error(err)
 			continue
 		}
 		anim.SetLoop(true)
 		t.anims = append(t.anims, anim)
 	}
+
+
+	for i := range g.Skins {
+		_, err := g.NewSkeleton(i)
+		if err != nil {
+			glog.Error(err)
+		}
+	}
+
+	g.BindSkeletion()
 
 	// Add normals helper
 	//box := n.GetNode().Children()[0].GetNode().Children()[0]
