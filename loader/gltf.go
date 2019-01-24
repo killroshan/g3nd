@@ -202,7 +202,6 @@ func (t *GltfLoader) loadScene(a *app.App, fpath string) error {
 			slide.Subscribe(gui.OnChange, func(name string, ev interface{}) {
 				ref := &weights[idx]
 				*ref = slide.Value()
-				fmt.Println(slide.Value(), name)
 				for _, mg := range(mgs) {
 					mg.SetWeights(weights)
 				}
