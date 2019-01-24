@@ -8,6 +8,7 @@ import (
 	"path/filepath"
 
 	"github.com/g3n/engine/animation"
+	"github.com/g3n/engine/geometry"
 	"github.com/g3n/engine/gui"
 	"github.com/g3n/engine/light"
 	"github.com/g3n/engine/loader/gltf"
@@ -23,10 +24,11 @@ func init() {
 }
 
 type GltfLoader struct {
-	prevLoaded core.INode
-	selFile    *util.FileSelectButton
-	anims      []*animation.Animation
+	prevLoaded     core.INode
+	selFile        *util.FileSelectButton
+	anims          []*animation.Animation
 	animationGroup *gui.ControlFolderGroup
+	emotesGroup    *gui.ControlFolderGroup
 }
 
 func (t *GltfLoader) Initialize(a *app.App) {
@@ -73,13 +75,12 @@ func (t *GltfLoader) Initialize(a *app.App) {
 	a.Gui().Add(errLabel)
 
 	t.animationGroup = a.ControlFolder().AddGroup("Animations")
+	t.emotesGroup    = a.ControlFolder().AddGroup("Emotes")
 
 	//fpath := "gltf/DamagedHelmet/glTF/DamagedHelmet.gltf"
 	fpath := "gltf/RobotExpressive.glb"
 	t.loadScene(a, filepath.Join(a.DirData(), fpath))
 	t.selFile.Label.SetText("File: " + filepath.Base(fpath))
-
-
 
 }
 
@@ -148,7 +149,6 @@ func (t *GltfLoader) loadScene(a *app.App, fpath string) error {
 		t.anims = append(t.anims, anim)
 	}
 
-
 	for i := range g.Skins {
 		_, err := g.NewSkeleton(i)
 		if err != nil {
@@ -159,11 +159,12 @@ func (t *GltfLoader) loadScene(a *app.App, fpath string) error {
 	g.BindSkeletion()
 
 	t.animationGroup.RemoveAll()
-	for idx, anim := range(t.anims) {
+	for idx, anim := range t.anims {
+		idx := idx
 		anim.SetPaused(true)
 		cb := gui.NewCheckBox(anim.Name())
 		t.animationGroup.AddPanel(cb)
-		cb.Subscribe(gui.OnChange, func(name string, ev interface{}){
+		cb.Subscribe(gui.OnChange, func(name string, ev interface{}) {
 			paused := t.anims[idx].Paused()
 			t.anims[idx].SetPaused(!paused)
 		})
@@ -175,6 +176,40 @@ func (t *GltfLoader) loadScene(a *app.App, fpath string) error {
 	//a.Scene().Add(normals)
 
 	a.Scene().Add(n)
+
+	t.emotesGroup.RemoveAll()
+	mgs := make([]*geometry.MorphGeometry, 0)
+	a.Scene().OperateOnChildren(func(node core.INode) {
+		if node.GetNode().Name() == "Head[1/3]" {
+			fmt.Println(node.GetNode().Name())
+		}
+
+		if igr, ok := node.(graphic.IGraphic); ok {
+			igeo := igr.IGeometry()
+			if mg, ok := igeo.(*geometry.MorphGeometry); ok {
+				mgs = append(mgs, mg)
+			}
+		}
+	})
+
+	if len(mgs) > 0 {
+		emotes_num := len(mgs[0].GetTargets())
+		weights := make([]float32, emotes_num, emotes_num)
+
+		for idx := 0; idx < emotes_num; idx++ {
+			slide := a.ControlFolder().AddSlider(fmt.Sprintf("%d", idx), 1, 0)
+			idx := idx
+			slide.Subscribe(gui.OnChange, func(name string, ev interface{}) {
+				ref := &weights[idx]
+				*ref = slide.Value()
+				fmt.Println(slide.Value(), name)
+				for _, mg := range(mgs) {
+					mg.SetWeights(weights)
+				}
+			})
+		}
+	}
+
 	t.prevLoaded = n
 	return nil
 }
