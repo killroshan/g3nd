@@ -1,3 +1,6 @@
 g3nd.prof
 g3nd.svg
 
+/Gopkg.lock
+/Gopkg.toml
+/vendor

@@ -26,6 +26,7 @@ type GltfLoader struct {
 	prevLoaded core.INode
 	selFile    *util.FileSelectButton
 	anims      []*animation.Animation
+	animationGroup *gui.ControlFolderGroup
 }
 
 func (t *GltfLoader) Initialize(a *app.App) {
@@ -71,10 +72,14 @@ func (t *GltfLoader) Initialize(a *app.App) {
 	errLabel.SetFontSize(18)
 	a.Gui().Add(errLabel)
 
+	t.animationGroup = a.ControlFolder().AddGroup("Animations")
+
 	//fpath := "gltf/DamagedHelmet/glTF/DamagedHelmet.gltf"
-	fpath := "gltf/SimpleSkinning.gltf"
+	fpath := "gltf/RobotExpressive.glb"
 	t.loadScene(a, filepath.Join(a.DirData(), fpath))
 	t.selFile.Label.SetText("File: " + filepath.Base(fpath))
+
+
 
 }
 
@@ -92,7 +97,7 @@ func (t *GltfLoader) loadScene(a *app.App, fpath string) error {
 
 	// Remove previous model from the scene
 	if t.prevLoaded != nil {
-		t.anims = t.anims[:]
+		t.anims = t.anims[:0]
 		a.Scene().Remove(t.prevLoaded)
 		t.prevLoaded.Dispose()
 		t.prevLoaded = nil
@@ -152,6 +157,17 @@ func (t *GltfLoader) loadScene(a *app.App, fpath string) error {
 	}
 
 	g.BindSkeletion()
+
+	t.animationGroup.RemoveAll()
+	for idx, anim := range(t.anims) {
+		anim.SetPaused(true)
+		cb := gui.NewCheckBox(anim.Name())
+		t.animationGroup.AddPanel(cb)
+		cb.Subscribe(gui.OnChange, func(name string, ev interface{}){
+			paused := t.anims[idx].Paused()
+			t.anims[idx].SetPaused(!paused)
+		})
+	}
 
 	// Add normals helper
 	//box := n.GetNode().Children()[0].GetNode().Children()[0]
