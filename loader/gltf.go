@@ -29,6 +29,7 @@ type GltfLoader struct {
 	anims          []*animation.Animation
 	animationGroup *gui.ControlFolderGroup
 	emotesGroup    *gui.ControlFolderGroup
+	poseBtn        *gui.Button
 }
 
 func (t *GltfLoader) Initialize(a *app.App) {
@@ -74,6 +75,8 @@ func (t *GltfLoader) Initialize(a *app.App) {
 	errLabel.SetFontSize(18)
 	a.Gui().Add(errLabel)
 
+	t.poseBtn = gui.NewButton("pose")
+	a.ControlFolder().AddPanel(t.poseBtn)
 	t.animationGroup = a.ControlFolder().AddGroup("Animations")
 	t.emotesGroup    = a.ControlFolder().AddGroup("Emotes")
 
@@ -99,6 +102,7 @@ func (t *GltfLoader) loadScene(a *app.App, fpath string) error {
 	// Remove previous model from the scene
 	if t.prevLoaded != nil {
 		t.anims = t.anims[:0]
+
 		a.Scene().Remove(t.prevLoaded)
 		t.prevLoaded.Dispose()
 		t.prevLoaded = nil
@@ -156,9 +160,16 @@ func (t *GltfLoader) loadScene(a *app.App, fpath string) error {
 		}
 	}
 
-	g.BindSkeletion()
+	sks := g.BindSkeletion()
+	t.poseBtn.Subscribe(gui.OnClick, func(name string, ev interface{}){
+		for _, sk := range sks {
+			sk := sk
+			sk.Pose()
+		}
+	})
 
 	t.animationGroup.RemoveAll()
+
 	for idx, anim := range t.anims {
 		idx := idx
 		anim.SetPaused(true)
@@ -180,9 +191,9 @@ func (t *GltfLoader) loadScene(a *app.App, fpath string) error {
 	t.emotesGroup.RemoveAll()
 	mgs := make([]*geometry.MorphGeometry, 0)
 	a.Scene().OperateOnChildren(func(node core.INode) {
-		if node.GetNode().Name() == "Head[1/3]" {
-			fmt.Println(node.GetNode().Name())
-		}
+		//if node.GetNode().Name() == "Head[1/3]" {
+		//	fmt.Println(node.GetNode().Name())
+		//}
 
 		if igr, ok := node.(graphic.IGraphic); ok {
 			igeo := igr.IGeometry()
@@ -197,7 +208,7 @@ func (t *GltfLoader) loadScene(a *app.App, fpath string) error {
 		weights := make([]float32, emotes_num, emotes_num)
 
 		for idx := 0; idx < emotes_num; idx++ {
-			slide := a.ControlFolder().AddSlider(fmt.Sprintf("%d", idx), 1, 0)
+			slide := t.emotesGroup.AddSlider(fmt.Sprintf("%d", idx), 1, 0)
 			idx := idx
 			slide.Subscribe(gui.OnChange, func(name string, ev interface{}) {
 				ref := &weights[idx]
